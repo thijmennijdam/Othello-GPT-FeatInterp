@@ -1,1 +1,7 @@
 .history/
+.venv/
+**/__pycache__/
+data/othello_games/*
+data/saved_feature_activations/*
+tests_snellius
+wandb
