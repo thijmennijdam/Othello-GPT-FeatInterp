@@ -33,7 +33,7 @@ This command will evaluate the model on 10,000 games, and the process should tak
 
 # How to train SAEs
 
-You need to upload the OthelloGPT as a Hugging Face model and set the correct naming in the TransformerLens library. Details for this can be found in 'TransformerLens_changes.md'. The TransformerLens library can only load an official list of Hugging Face models, and you need to add it manually there. Once your model is uploaded, you can train the SAEs on this model using SAELens.
+You need to upload the OthelloGPT as a Hugging Face model and set the correct naming in the TransformerLens library. Details on how to do this can be found in 'TransformerLens_changes.md'. The TransformerLens library can only load an official list of Hugging Face models, and you need to add it manually there. Once your model is uploaded, you can train the SAEs on this model using SAELens.
 
 To train the SAEs, run the following command (example):
 
