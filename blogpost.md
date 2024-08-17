@@ -36,13 +36,11 @@ The dataset used for this research is publicly [available](https://huggingface.c
 
 ### Othello-GPT
 
-To find a good balance between a realistic architecture and research efficiency, I used a residual stream dimension of 128 and 6 layers, similar to the configuration used by He et al. (2024) [[1]](#1). I trained the model on 1 million games (59 million tokens/moves) for 4 epochs, achieving an accuracy of 96.5%. Full hyperparameters for the model and training can be found in the [Appendix](#hyperparameters-of-othello-gpt).
+To find a good balance between a realistic architecture and research efficiency, I used a residual stream dimension of 128 and 6 layers, similar to the configuration used by He et al. (2024) [[1]](#1). I trained the model on 1 million games (59 million tokens/moves) for 5 epochs, achieving an accuracy of 98.15%.
 
 ### Sparse Autoencoders
 
-I trained Sparse Autoencoders (SAEs) in layers 1, 3, and 5 to observe effects at early, middle, and later stages within the model. Similar to work of Huben (2024) [[2]](#2), I chose to train the SAEs on the residual stream. I applied an L1 sparsity penalty of 5, a relatively high value chosen based on initial satisfactory results and time constraints that did not allow for further optimization.
-
-Two variants of SAEs were trained for each of these layers, with expansion factors of 8 and 32. This means the hidden dimension of the sparse autoencoder is 8 or 32 times larger than the input size (the residual stream). The SAEs were trained on 80,000 games, amounting to approximately 4 million tokens or moves. From now on, I will refer to the SAEs by combining the layer number and expansion factor, such as L3E32 for the SAE trained on the third layer with an expansion factor of 32.
+I trained Sparse Autoencoders (SAEs) in layers 1, 3, and 5 to observe effects at early, middle, and later stages within the model. Similar to work of Huben (2024) [[2]](#2), I chose to train the SAEs on the residual stream. The SAE follows a common architecture with 1-hidden layer neural network with ReLU activations. It is trained with reconstruction accuracy and an L1 sparsity penalty to enfore sparsity of the activations. An L1 sparsity penalty of 0.01 was used for all SAEs. Two variants of SAEs were trained for each of these layers, with expansion factors of 8 and 32. This means the hidden dimension of the sparse autoencoder is 8 or 32 times larger than the input size (the residual stream). The SAEs were trained on 1.7M games. From now on, I will refer to the SAEs by combining the layer number and expansion factor, such as L3E32 for the SAE trained on the third layer with an expansion factor of 32.
 
 Figure 1a shows that SAEs with an expansion factor of 8 have no dead features (features that activate at least once in 1,000 model forward passes), while the E32 variants exhibit dead features. This outcome is not surprising due to the significantly greater number of features available, providing the SAEs with more capacity to learn. As the dimensionality of the E32 variants is 4,096, this means that L1 and L3 have about 5% dead features, while in L5, this increases to approximately 22%.
 
