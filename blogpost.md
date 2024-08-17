@@ -10,8 +10,22 @@ Although these works focus on a central problem for SAE training—how to assess
 
 Next, I will provide a brief introduction to the Othello game. Then, I will outline my experimental setup, detailing the training process for both Othello-GPT and the SAEs. Following this, I will describe how I obtained and visualized the board state features of the SAEs, and I will conduct both a quantitative and qualitative analysis of these features. Finally, I will conclude with a discussion of my findings.
 
-## Othello
-TODO: explain othello game. Here also dive a little bit in the 'mine' and 'their' representation: Because the same model predicts both moves for white and for black, it learns to represent the board as 'my pieces' when its the corresponding turn for that color, which whould be even moves for black as black always starts in othello, and all white pieces are then the 'their' pieces. When the move is played and the next move will be predicted, suddenly the board state can be better predicted when the 'mine' features are used on the white pieces now, as it is now whits turn to play. 
+# Othello
+
+Othello is a two-player strategy board game played on an 8x8 grid. Each player alternates turns, placing discs of their color—typically black or white—on the board. The objective is to capture the opponent's discs by surrounding them vertically, horizontally, or diagonally with your own discs, causing the captured discs to flip to your color. The game concludes when neither player can make a valid move, and the player with the most discs of their color on the board wins. 
+
+Figure 1 illustrates an Othello board, which is formally referred to as a *board state*.
+
+<img src="data/extracted_notable_features/layer=1/expansion_factor=8/l1_penalty=0.01/n_games=25000/threshold=0.99/L1F1000_total_moves=14750_M=0_T=1_B=0/k=6.png" alt="Example Image" width="80%" height="auto">
+
+<p style="text-align: center;">Figure 1: An Othello board state. White pieces are represented with an aqua green color, while black pieces are denoted with red squares. The most recent move is marked by a triangle, and flipped pieces are shown as squares. Legal moves at the current board state are displayed as more transparent versions of their respective colors, aqua green and red.</p>
+
+## Othello-GPT
+
+The initial work on Othello-GPT was conducted by Li et al. (2023) [[8]](#8), who trained a decoder-only transformer model to predict the next move in an Othello game. Li et al. (2023) [[8]](#8) discovered that the model's residual stream could be used to predict the board state by training a non-linear probe on the activations within the residual stream. Later, Nanda et al. (2023) [[4]](#4) demonstrated that even a linear probe could predict the board state by not focusing on the specific color of the pieces, but rather by determining whether a piece belongs to the opponent (a 'their' piece) or to the current player who is allowed to move (a 'mine' piece).
+
+For example, in Figure 1, since it is white's turn to move, the white pieces would be considered 'mine' pieces, and the black pieces 'their' pieces. This method provides a more efficient way of representing the board state, as the same features can be used to predict the board state for both white and black moves. This understanding will be utilized to interpret the features of the SAEs.
+
 
 # Experimental Setup
 
@@ -22,13 +36,11 @@ The dataset used for this research is publicly [available](https://huggingface.c
 
 ### Othello-GPT
 
-To find a good balance between a realistic architecture and research efficiency, I used a residual stream dimension of 128 and 6 layers, similar to the configuration used by He et al. (2024) [[1]](#1). I trained the model on 1 million games (59 million tokens/moves) for 4 epochs, achieving an accuracy of 96.5%. Full hyperparameters for the model and training can be found in the [Appendix](#hyperparameters-of-othello-gpt).
+To find a good balance between a realistic architecture and research efficiency, I used a residual stream dimension of 128 and 6 layers, similar to the configuration used by He et al. (2024) [[1]](#1). I trained the model on 1 million games (59 million tokens/moves) for 5 epochs, achieving an accuracy of 98.15%.
 
 ### Sparse Autoencoders
 
-I trained Sparse Autoencoders (SAEs) in layers 1, 3, and 5 to observe effects at early, middle, and later stages within the model. Similar to work of Huben (2024) [[2]](#2), I chose to train the SAEs on the residual stream. I applied an L1 sparsity penalty of 5, a relatively high value chosen based on initial satisfactory results and time constraints that did not allow for further optimization.
-
-Two variants of SAEs were trained for each of these layers, with expansion factors of 8 and 32. This means the hidden dimension of the sparse autoencoder is 8 or 32 times larger than the input size (the residual stream). The SAEs were trained on 80,000 games, amounting to approximately 4 million tokens or moves. From now on, I will refer to the SAEs by combining the layer number and expansion factor, such as L3E32 for the SAE trained on the third layer with an expansion factor of 32.
+I trained Sparse Autoencoders (SAEs) in layers 1, 3, and 5 to observe effects at early, middle, and later stages within the model. Similar to work of Huben (2024) [[2]](#2), I chose to train the SAEs on the residual stream. The SAE follows a common architecture with 1-hidden layer neural network with ReLU activations. It is trained with reconstruction accuracy and an L1 sparsity penalty to enfore sparsity of the activations. An L1 sparsity penalty of 0.01 was used for all SAEs. Two variants of SAEs were trained for each of these layers, with expansion factors of 8 and 32. This means the hidden dimension of the sparse autoencoder is 8 or 32 times larger than the input size (the residual stream). The SAEs were trained on 1.7M games. From now on, I will refer to the SAEs by combining the layer number and expansion factor, such as L3E32 for the SAE trained on the third layer with an expansion factor of 32.
 
 Figure 1a shows that SAEs with an expansion factor of 8 have no dead features (features that activate at least once in 1,000 model forward passes), while the E32 variants exhibit dead features. This outcome is not surprising due to the significantly greater number of features available, providing the SAEs with more capacity to learn. As the dimensionality of the E32 variants is 4,096, this means that L1 and L3 have about 5% dead features, while in L5, this increases to approximately 22%.
 
@@ -51,43 +63,49 @@ Although the later layers have more dead features, they also have higher explain
 
 <p style="text-align: center;">Figure 1. From left to right: (a) Number of dead features (b) Explained variance (c) Reconstruction error (MSE) across training.</p>
 
-# How to Find Board State Features Using Sparse Autoencoders
+# Extracting Board State Features From Sparse Autoencoders
 
-Now that we have trained SAEs on our Othello-GPT model, we employ a common practice in dictionary learning to associate behaviors with autoencoder features. This method, known as [Max Activating Dataset Examples](https://dynalist.io/d/n2ZWtnoYHrU1s4vnFSAQ519J#z=pwjeUj-94p6EwwMO_41Kb3h1), involves running a large amount of data through the model to identify the inputs that most activate a particular neuron. By examining these inputs, we can potentially observe patterns, providing evidence that the feature is detecting these patterns. We apply this technique across all features in our six SAEs. The full pipeline is as follows:
+After training the SAEs on the Othello-GPT model, a common practice from dictionary learning is employed to associate behaviors with autoencoder features. This method, known as [Max Activating Dataset Examples](https://dynalist.io/d/n2ZWtnoYHrU1s4vnFSAQ519J#z=pwjeUj-94p6EwwMO_41Kb3h1), involves running a large dataset through the model to identify inputs that most strongly activate specific neurons. By analyzing these inputs, potential patterns may emerge, indicating that a feature is detecting these patterns. This technique is applied across all features in the six SAEs and serves as the foundation for extracting board state features. The full pipeline is as follows:
 
-1. First, I run the 30,00 games, each with 60 moves, through the model and SAEs. The number of games was chosen to allow local storage of these activations. This process yields `n_games x seq_dim x d_sae` activations, where `seq_dim=60`, representing the number of moves in Othello games. For each SAE feature, this results in `60 x 30,000 = 1.8M` total activations. Each activation reflects how active this feature is when the associated move is played.
+1. **Running the games:** A set of 25k Othello games, each consisting of 60 moves, is processed through the model and SAEs. The number of games is selected to ensure local storage of the activations. This results in activations of shape `n_games x seq_dim x d_sae`, where `seq_dim=60`, representing the number of moves in Othello games. For each SAE feature, this process yields `60 x 25k = 1.5M` activations, with each activation indicating the feature's activity during the associated move.
 
-2. Next, I identify the top 1% quantile of all these activations for a specific feature, and then extract these moves.
+2. **Identifying top activations:** The top 1% quantile of all activations for a specific feature is identified, and the corresponding moves are extracted.
 
-3. The ground truth board states are computed at these moves using a script that can play Othello games when given move sequences, representing the board as a two-dimensional 8x8 array. In this array, 2 denotes white pieces, 1 denotes black pieces, and 0 indicates blank spaces.
+3. **Computing board states:** The ground truth board states for these moves are computed using a script capable of playing Othello games based on move sequences, representing the board as a two-dimensional 8x8 array. In this array, `2` denotes white pieces, `1` denotes black pieces, and `0` indicates blank spaces.
 
-4. The board configurations are translated into "mine" pieces, "theirs" pieces, and "blank" spaces. For instance, if it's white's move, all white pieces on the board are considered "mine" pieces, and the black pieces are "theirs."
+4. **Classifying board pieces:** The board configurations are categorized into "mine" pieces, "theirs" pieces, and "blank" spaces. For instance, if it's white's move, all white pieces on the board are considered "mine" pieces, and the black pieces are "theirs."
 
-5. These boards are separated into three distinct 8x8 arrays: a 'mine board' marked by 1s for the mine pieces and 0s otherwise, a 'their board' showing 1s for the opposing pieces and 0s otherwise, and a 'blank board' for empty spaces.
+5. **Creating mine/their/blank boards:** These boards are divided into three distinct 8x8 arrays: a 'mine board' marked by `1`s for the mine pieces and `0`s otherwise, a 'their board' showing `1`s for the opposing pieces and `0`s otherwise, and a 'blank board' for empty spaces.
 
-6. By averaging over all these board states for the three different types, plots like those in Figure 2 can be obtained.
+6. **Averaging boards:** By averaging these boards for the three different types, visualizations like those in Figure 2 can be generated. A dark blue color indicates that the tile is consistently occupied in the top 1% quantile of board states for this feature's activations.
 
-In Figure 2, the tile H0 has a value of 1, indicating its presence in all of the top 1% quantile boards for this feature’s activations.
+7. **Feature extraction:** A feature is considered significant for further analysis if a tile is consistently occupied in at least 99% of the board states, meaning the average score is 0.99 or higher. For example, in Figure 2, the B2 square on the 'Theirs' board meets these criteria.
+
+L1F193 is defined as a **board state feature** that activates when the B2 square is occupied by the opponent. The B2 tile, which surpasses the threshold, is referred to as a **board state property**[^1]. When this board state property is associated with the current player, it is defined as a **mine board state property**, and when associated with the opponent, it is recognized as a **their board state property**.
+
+[^1]: This usage of "board state property" is broader than the definition provided by Karvonen et al. (2024)[[7]](#7), who define it as a classifier of the presence of a piece at a specific board square. Here, it refers to a tile that is consistently occupied in the top 1% quantile of board states for a feature's activations, suggesting that this feature could potentially classify the presence of a piece at this specific board square, although this has not been explicitly tested.
 
 
-<img src="plots/examples/L1F3582_total_moves=421_M=0_T=1_B=9.png" alt="Example Image" width="80%" height="auto">
+<img src="data/extracted_notable_features/layer=1/expansion_factor=8/l1_penalty=0.01/n_games=25000/threshold=0.99/L1F193_total_moves=14750_M=0_T=1_B=0.png" alt="Example Image" width="80%" height="auto">
 
-<p style="text-align: center;">Figure 2: Plot of the average board state of feature 3582 in layer 1. The average was taken over 421 board states. </p>
+<p style="text-align: center;">Figure 2: Plot of the average board state of feature 193 in layer 1. The average was taken over 14750 board states. </p>
 
-In the single board states of the highest three activations, shown in Figure 3, we observe that all these boards have the H0 tile occupied by black pieces (indicated as red tiles, while white pieces are green), and in all instances, it is white's turn to move. The red circle around a tile indicates the last move played, while the purple circles show pieces that were flipped during this move. Notably, in all of these cases, the last move played is also the H0 tile, which suggests that this feature may detect if the move H0 is played by the opponent.
+<!-- FOR LATER
+In the single board states of the highest three activations, shown in Figure 3, we observe that all these boards have the H0 tile occupied by black pieces (indicated as red tiles, while white pieces are green), and in all instances, it is white's turn to move. The red circle around a tile indicates the last move played, while the purple circles show pieces that were flipped during this move. Notably, in all of these cases, the last move played is also the H0 tile, which suggests that this feature may detect if the move H0 is played by the opponent. -->
 
-<table>
+<!-- <table>
   <tr>
     <td><img src="plots/examples/k=0.png" alt="Highest Activation 1" style="width: 100%; height: auto;"></td>
     <td><img src="plots/examples/k=1.png" alt="Highest Activation 2" style="width: 100%; height: auto;"></td>
     <td><img src="plots/examples/k=2.png" alt="Highest Activation 3" style="width: 100%; height: auto;"></td>
   </tr>
-</table>
+</table> -->
+
+<!-- <p style="text-align: center;">Figure 3: Top 3 board states that had the highest activations for feature 3582 in L1E32.</p> -->
 
 
-<p style="text-align: center;">Figure 3: Top 3 board states that had the highest activations for feature 3582 in L1E32.</p>
-
-Since it is not always guaranteed that a tile will consistently score high when averaging over the top 1% quantile games, I developed a metric to filter out specific average board states for further analysis. This metric is straightforward: it considers the percentage that a tile appears in these board states. If a tile in the 'mine' or 'their' category appears active in at least 95% of the board states (i.e., an average score of 0.95), it is considered relevant for further analysis. This threshold of 0.95 proved effective in identifying high-quality features while allowing a margin for 5% of the games where the tile might not be active. Initially, I set a threshold of 0.99, but it was too restrictive, yielding almost no features for the SAEs in layer 5. In my preliminary results with this metric, I initially encountered many low-quality results due to most features that responded to my metrics only having a handful of games in the top 1% quantile. Therefore, I focused on instances where at least 10 activations were active as an additional condition for further inspection.
+<!-- 
+Since it is not always guaranteed that a tile will consistently score high when averaging over the top 1% quantile games, I developed a metric to filter out specific average board states for further analysis. This metric is straightforward: it considers the percentage that a tile appears in these board states. If a tile in the 'mine' or 'their' category appears active in at least 95% of the board states (i.e., an average score of 0.95), it is considered relevant for further analysis. This threshold of 0.95 proved effective in identifying high-quality features while allowing a margin for 5% of the games where the tile might not be active. Initially, I set a threshold of 0.99, but it was too restrictive, yielding almost no features for the SAEs in layer 5. In my preliminary results with this metric, I initially encountered many low-quality results due to most features that responded to my metrics only having a handful of games in the top 1% quantile. Therefore, I focused on instances where at least 10 activations were active as an additional condition for further inspection. -->
 
 # Results
 
@@ -319,6 +337,8 @@ There are also some limitations to our approach. One limitation to the fewer fea
 <a id="6">[6]</a> Chiu, J., Hazineh, D., & Zhang, Z. (2023). Probing Emergent world representations in Transformer Networks: Sequential models trained to play Othello. Probing Emergent World Representations in Transformer Networks: Sequential Models Trained to Play Othello. https://deanhazineh.github.io/miniprojects/MI_Othello/paper.pdf
 
 <a id="7">[7]</a> Karvonen, A., Wright, B., Rager, C., Angell, R., Brinkmann, J., Smith, L. R., Verdun, C. M., Bau, D., & Marks, S. (n.d.). Measuring Progress in Dictionary Learning for Language Model Interpretability with Board Game Models. OpenReview. https://openreview.net/forum?id=qzsDKwGJyB
+
+<a id="8">[8]</a> Li, K., Hopkins, A. K., Bau, D., Viégas, F., Pfister, H., & Wattenberg, M. (2022). Emergent world representations: Exploring a sequence model trained on a synthetic task. arXiv preprint arXiv:2210.13382.
 
 # Acknowledgements
 TODO
