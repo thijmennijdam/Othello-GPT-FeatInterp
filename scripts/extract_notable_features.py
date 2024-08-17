@@ -3,7 +3,7 @@ import os
 import torch
 import numpy as np
 from src.othello_dataset import OthelloDataset
-from src.utils.mech_interp_othello_utils import plot_single_board, int_to_label
+from src.utils.mech_interp_othello_utils_adopted import plot_single_board, int_to_label
 from src.utils.own_utils import write_csv
 from src.utils.plotly_utils import plot_square_as_board
 
@@ -70,7 +70,7 @@ def extract_notable_games(dataset, sae_layer, sae_expansion_factor, l1_penalty, 
             their_board_state_feature = (board_state_at_top_moves[1] > threshold).sum().item()
             blank_board_state_feature = (board_state_at_top_moves[2] > threshold).sum().item()
             
-            plots_dir = f"data/extracted_notable_features"
+            plots_dir = f"plots/qualitative"
 
             # check if the feature is notable and should be visualized
             if (mine_board_state_feature > 0 or their_board_state_feature > 0 ) and n_moves >= 100:
