@@ -8,7 +8,7 @@ from tqdm import tqdm
 import numpy as np
 import os
 
-from src.utils.mech_interp_othello_utils import (
+from src.utils.mech_interp_othello_utils_adopted import (
     to_string,
     OthelloBoardState
 )

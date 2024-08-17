@@ -49,13 +49,13 @@ Although the later layers have more dead features, they also have higher explain
 <table>
   <tr>
     <td style="padding: 10px;">
-      <img src="plots/wandb/dead_features.png" alt="Dead Features" style="width: 100%; height: auto;">
+      <img src="plots/sae_training/dead_features.png" alt="Dead Features" style="width: 100%; height: auto;">
     </td>
     <td style="padding: 10px;">
-      <img src="plots/wandb/explained_variance.png" alt="Explained Variance" style="width: 100%; height: auto;">
+      <img src="plots/sae_training/explained_variance.png" alt="Explained Variance" style="width: 100%; height: auto;">
     </td>
     <td style="padding: 10px;">
-      <img src="plots/wandb/mse_loss.png" alt="MSE Loss" style="width: 100%; height: auto;">
+      <img src="plots/sae_training/mse_loss.png" alt="MSE Loss" style="width: 100%; height: auto;">
     </td>
   </tr>
 </table>
@@ -122,13 +122,13 @@ Figure 4c reveals that the average game length of the features obtained is quite
 <table>
   <tr>
     <td style="padding: 10px;">
-      <img src="plots/figs/feature_at_least_1_mine_theirs.png" alt="Distribution of Features with At Least One Active 'Mine' or 'Theirs' Tile" style="width: 100%; height: auto;">
+      <img src="plots/quantitative_results/feature_at_least_1_mine_theirs.png" alt="Distribution of Features with At Least One Active 'Mine' or 'Theirs' Tile" style="width: 100%; height: auto;">
     </td>
     <td style="padding: 10px;">
-      <img src="plots/figs/avg_mine_theirs_tiles_per_feature.png" alt="Average Number of 'Mine' or 'Theirs' Tiles per Feature Across Layers" style="width: 100%; height: auto;">
+      <img src="plots/quantitative_results/avg_mine_theirs_tiles_per_feature.png" alt="Average Number of 'Mine' or 'Theirs' Tiles per Feature Across Layers" style="width: 100%; height: auto;">
     </td>
     <td style="padding: 10px;">
-      <img src="plots/figs/average_game_length.png" alt="Average Game Length of the Features Identified" style="width: 100%; height: auto;">
+      <img src="plots/quantitative_results/average_game_length.png" alt="Average Game Length of the Features Identified" style="width: 100%; height: auto;">
     </td>
   </tr>
 </table>
