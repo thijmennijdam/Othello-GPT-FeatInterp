@@ -55,6 +55,7 @@ def extract_notable_games(dataset, sae_layer, sae_expansion_factor, l1_penalty, 
         # process each feature in the current set
         for feature in range(0, step):
             feature_acts = np_activations[:, :, feature]
+            # take top 1% of activations as top moves
             top_moves = torch.tensor(feature_acts > np.quantile(feature_acts, 0.99)).cuda()
             
             # calculate board states at top moves 
