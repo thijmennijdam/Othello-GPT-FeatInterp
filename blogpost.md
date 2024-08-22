@@ -122,6 +122,9 @@ Figure 4a
 Figure 4b & c
 - To test which layers have more relevant features focussing on the opponents or own pieces, we look at the number of mine and their board state properties
 - When going deeper into the network, more Mine board state properties are found and less Their BSPs for E16 layers 
+
+- Overall, E16 seems to extract the most notable features so i will focus my qualitative, with the most BSP, so thats where I will concetrate my efforts of qualitative evalutation.
+ 
 <!-- Figure 4a illustrates that later layers tend to identify fewer board tile features. Although the higher number of dead features observed earlier in Layer 5 might contribute slightly to this trend, it does not fully explain the phenomenon. The difference in the number of dead features between Layer 1 and Layer 3 was not significant, yet Layer 3 shows a considerably lower number of active features compared to Layer 1.
 
 It can be observed in Figure 4b that the average number of board tiles per active feature typically decreases slightly as we go deeper into the model for the E32 SAE variants, but not for the E8 variants. While these trends are not substantial, it is interesting to note that the average number of mine/their tiles (for example, two 'mine' tiles and one 'their' tile would count as three mine/their tiles) ranges between 2 and 2.5. However, qualitatively, I observed that most features have one or two tiles, with outliers that have four or more and resemble higher-level features activated by specific board configurations. This leads to many tiles being above the threshold while most activations are zero. (I should update Figure 3b to a histogram plot to highlight this effect)
@@ -147,9 +150,39 @@ Figure 4c reveals that the average game length of the features obtained is quite
 
 ## Qualitative results
 
+
 <!-- What do these average board state plots look like across layers? How do they differ across layers and expansion factors? I examined all the features of the SAEs that met my metric criteria. I focused on identifying any qualitative differences between the E8 and E32 variants to see if, apart from identifying more board state features, there would be a difference in what they detected. I also looked for potential differences in features found across the different layers. -->
 
 ### Layer 1
+As observed in figure 4b and c, L1 has more extracted features that have BSPs that focus on the enemy pieces. And indeed, looking at the average board state plots of the notable features they mostly look something like the samples shown in FIgure 5. When looking at the top-10 boards, it can be observed that the BSP is also mostly the last moved played feature. Making the features of L1 to be mostly "this moved got played by the opponent" features. Which makes sense to be computed at the start of the network, and which is also in line with prior work [CITE]. Intersetingly, most of the extracted features have board state properties of tiles at the edge of the board. I think this is a direct result of outer ring tiles being more frequently, and the features being mostly "move detectors", so it makes sense that more frequent edge tiles appear as more frequent BSP for the extracted features in this layer. 
+
+"This moved played" features is however not the only features that I observed in this layer. With a few features also detecting a pattern in the opponents move (1170 / 1204 / 1275), shown in Figure 7. 
+
+I also observe features that seem to recongize very specific starts of the game, with its top 1% quantile acitvations consisting solely of the same games, which is indicated by the near 0 average board states apart from a few 1 values. A few examples are shown in Figure 8. Intersetingly, there were multiple features that detect this exact same game start. An example of three similar average board states for different features shown in FIgure 9.
+
+It is not only for these very specific game starts that multiple features are allocated. Also other different features yielded near identical average board state plots. Such as 113 and 129, and 272 and 328, shown in Figure 10. I observed these similarties purely as I am going through the plots in sequential order and therefore being able to spot these similarities, but I assume this happens for features that are much further apart from each other as well. It would require a seperate bit of code to simply look at a metric such as MSE between the average board states to see how much of these similarities appear, but this I leave for future work. 
+
+(OPTIONAL: same corner detected by multiple features, but with each different nuances in them? I should look into the nuances then)
+
+- Figure 5: 2 edges, 1 middle + top-k of 1 of them 3x
+- Figure 6: patterns
+- Figure 7: 
+  
+
+## Layer 3
+In L3, we see a change from mostly observing "this move is played" features to more features that reconize specifc board states. These features mostly activate when a certain tile, either of the opponents or of the current player, is occupied. Examples, along with the top-1 activated board is shown in Figure X. These have also been found in prior work [CITE], and have been reported to be mostly found in the middle layers 1-4 in the 6 layer network. 
+
+An interesting novel observation for features that I observe only for the L3, not nearly as much in L1 and L5, is that there are average board states that seem to activate not only when a BSP of either mine or their is found, but very specifically when a certain adjecent tile is also blank and this seems to happen most when this tile is active near or at the edge of the board. Examples are show in Figure X. When looking at the top 10 board states in near almost all board state this blank piece is legal for the current player. 
+
+Just like in L1, there are features detecting multiple BSPs that are active at the same time. This happens for ... both for the mine BSPs and the their BSP this happens. Shown in Figure X. 
+
+Notably, the same game start features are found in this layer as well. Also detecting the same game starts as many features in layer 1. I have not been able to detect any nuances that might arise in the features, but it could have to do with a different order of move sequeneces activating different features, altough ultimately leading to the same game state. Although this is highly speculative. Also different game starts are deteced here, for some have multiple features dedicated to it as well. Shown in Figure X. 
+
+## Layer 5
+- more features dediated to computing the board state
+- only one edge with blank near
+- interestingly there are still features with patterns here
+
 
 <!-- In the Layer 1 SAEs, both the E8 and E32 variants identify clear board state features at both the middle and edges of the board. For the expansion factor of 8, examples of the average board states are shown in Figure 5, while for the expansion factor of 32, examples are shown in Figure 6. You can find the top 10 board states of these features in [this](https://github.com/thijmennijdam/Othello-GPT-FeatInterp/tree/main/feature-visualizations/all-features/layer%3D1/expansion_factor%3D8/n_games%3D30000/threshold%3D0.95) and [this](https://github.com/thijmennijdam/Othello-GPT-FeatInterp/tree/main/feature-visualizations/all-features/layer%3D1/expansion_factor%3D32/n_games%3D30000/threshold%3D0.95) folder. -->
 
