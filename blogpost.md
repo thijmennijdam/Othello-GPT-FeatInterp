@@ -28,40 +28,42 @@ For example, in Figure 1, since it is white's turn to move, the white pieces wou
 
 
 # Experimental Setup
+To visualize features, it was necessary to access an Othello-GPT model along with its corresponding Sparse Autoencoders (SAEs). The only available open-source Othello-GPT model with SAEs currently has a residual stream dimensionality of 512 and consists of 8 layers. However, previous research has shown that much smaller Othello-GPT models, even those with only one layer, can achieve near-perfect accuracy [[3]](#3). Given the intention to inspect the features of SAEs directly, a smaller model size was preferred. Therefore, the decision was made to train both the Othello-GPT model and the SAEs from scratch. 
 
-Before I can visualize features, I need access to an Othello-GPT model with its respective SAEs. Currently, the only open-source Othello-GPT model with SAEs has a residual stream dimensionality of 512 and consists of 8 layers. However, it is known that much smaller Othello-GPT models, even those with only 1 layer, can achieve almost perfect accuracy [[3]](#3). Since I want to inspect the features of SAEs myself, a smaller model size than the currently open-source model is preferred. Therefore, I decided to train the Othello-GPT and SAEs from scratch. For this purpose, I used the [TransformerLens](https://github.com/TransformerLensOrg/TransformerLens) library to train the Othello-GPT and [SAELens](https://github.com/jbloomAus/SAELens) for the SAEs. SAELens provides a full training pipeline compatible with models from the TransformerLens library. One problem I encountered was that SAELens does not currently support using locally trained models from TransformerLens directly and is only compatible with official TransformerLens models available on HuggingFace. To enable the use of custom models, I made several modifications to the respective libraries. These changes are detailed in this [file](https://github.com/thijmennijdam/Othello-GPT-FeatInterp/blob/main/changes.md).
+The [TransformerLens](https://github.com/TransformerLensOrg/TransformerLens) library was utilized to train the Othello-GPT model, while the SAEs were trained using [SAELens](https://github.com/jbloomAus/SAELens). SAELens offers a complete training pipeline compatible with models from the TransformerLens library. A challenge encountered was that SAELens does not currently support using locally trained models from TransformerLens directly and is only compatible with official TransformerLens models available on HuggingFace. To enable the use of custom models, several modifications were made to the respective libraries. These modifications are documented in this [file](https://github.com/thijmennijdam/Othello-GPT-FeatInterp/blob/main/changes.md).
 
-The dataset used for this research is publicly [available](https://huggingface.co/datasets/taufeeque/othellogpt) on HuggingFace and consists of 23.5 million synthetic Othello games.
+The dataset used for this research, consisting of 23.5 million synthetic Othello games, is publicly [available](https://huggingface.co/datasets/taufeeque/othellogpt) on HuggingFace.
+
 ## Model Training
 
 ### Othello-GPT
-
-To find a good balance between a realistic architecture and research efficiency, I used a residual stream dimension of 128 and 6 layers, similar to the configuration used by He et al. (2024) [[1]](#1). I trained the model on 1 million games (59 million tokens/moves) for 5 epochs, achieving an accuracy of 98.15%.
+To balance between a realistic architecture and research efficiency, a residual stream dimension of 128 and 6 layers was chosen, similar to the configuration used by He et al. (2024) [[1]](#1). The model was trained on 1 million games (59 million tokens/moves) over 5 epochs, achieving an accuracy of 98.15%.
 
 ### Sparse Autoencoders
+Sparse Autoencoders (SAEs) were trained in layers 1, 3, and 5 to observe effects at early, middle, and later stages within the model. Following the work of Huben (2024) [[2]](#2), the SAEs were trained on the residual stream. The SAE architecture consisted of a one-hidden-layer neural network with ReLU activations, trained with a reconstruction loss and an L1 sparsity penalty to enforce sparse activations. An L1 sparsity penalty of 0.01 was applied to all SAEs. To assess wheter expansion factor size affects the learned features, two variants of SAEs were trained for each of these layers, with expansion factors of 8 and 16, meaning the hidden dimension of the SAE is 8 or 16 times larger than the input size. The SAEs were trained on 1.7 million games. From this point forward, SAEs are referred to by combining the layer number and expansion factor, such as L3E16 for the SAE trained on the third layer with an expansion factor of 16.
 
-I trained Sparse Autoencoders (SAEs) in layers 1, 3, and 5 to observe effects at early, middle, and later stages within the model. Similar to work of Huben (2024) [[2]](#2), I chose to train the SAEs on the residual stream. The SAE follows a common architecture with 1-hidden layer neural network with ReLU activations. It is trained with reconstruction accuracy and an L1 sparsity penalty to enfore sparsity of the activations. An L1 sparsity penalty of 0.01 was used for all SAEs. Two variants of SAEs were trained for each of these layers, with expansion factors of 8 and 32. This means the hidden dimension of the sparse autoencoder is 8 or 32 times larger than the input size (the residual stream). The SAEs were trained on 1.7M games. From now on, I will refer to the SAEs by combining the layer number and expansion factor, such as L3E32 for the SAE trained on the third layer with an expansion factor of 32.
+The MSE loss was used to assess the SAEs' ability to reconstruct model activations. As shown in Figure 1a, all SAEs, except for L5E8, achieved near-zero MSE loss, indicating a high reconstruction accuracy. Notably, the L5E8 SAE lacked the capacity to fully reconstruct the input as effectively as other SAEs, whereas the E16 variant did not exhibit this limitation. In other layers, both the L8 and E16 variants performed similarly on this metric. 
 
-Figure 1a shows that SAEs with an expansion factor of 8 have no dead features (features that activate at least once in 1,000 model forward passes), while the E32 variants exhibit dead features. This outcome is not surprising due to the significantly greater number of features available, providing the SAEs with more capacity to learn. As the dimensionality of the E32 variants is 4,096, this means that L1 and L3 have about 5% dead features, while in L5, this increases to approximately 22%.
+To measures how much of the input variance is retained after processing through the SAE, the explained variance was also calculated. All SAEs demonstrated an explained variance greater than 0.999, with L5E8 again performing slightly worse than the others. This outcome is logical, as a higher MSE loss naturally results in lower explained variance.
 
-Although the later layers have more dead features, they also have higher explained variance (Figure 1b) and higher reconstruction loss (Figure 1c). This means that while fewer features are needed to explain a larger portion of the data's variance in the later layers, there is relatively more predictive power in the unexplained variance, as the SAEs perform worse at reconstructing the input.
+To quantify the number of features within the SAE that are never activated, the number of dead features was calculated. A dead feature is defined as one that does not activate across 1,000 input games. Figure 1c shows that SAEs in layer 1 have no dead features, while SAEs in layer 3 and L5E16 have a very small number of dead features.
 
 <table>
   <tr>
     <td style="padding: 10px;">
-      <img src="plots/sae_training/dead_features.png" alt="Dead Features" style="width: 100%; height: auto;">
+    <img src="plots/sae_training/mse_loss.png" alt="MSE Loss" style="width: 100%; height: auto;">
     </td>
     <td style="padding: 10px;">
       <img src="plots/sae_training/explained_variance.png" alt="Explained Variance" style="width: 100%; height: auto;">
     </td>
     <td style="padding: 10px;">
-      <img src="plots/sae_training/mse_loss.png" alt="MSE Loss" style="width: 100%; height: auto;">
+      <img src="plots/sae_training/dead_features.png" alt="Dead Features" style="width: 100%; height: auto;">
     </td>
   </tr>
 </table>
 
 
-<p style="text-align: center;">Figure 1. From left to right: (a) Number of dead features (b) Explained variance (c) Reconstruction error (MSE) across training.</p>
+<p style="text-align: center;">Figure 2. From left to right: (a) Number of dead features (b) Explained variance (c) Reconstruction error (MSE) across training.</p>
 
 # Extracting Board State Features From Sparse Autoencoders
 
@@ -81,9 +83,9 @@ After training the SAEs on the Othello-GPT model, a common practice from diction
 
 7. **Feature extraction:** A feature is considered significant for further analysis if a tile is consistently occupied in at least 99% of the board states, meaning the average score is 0.99 or higher. For example, in Figure 2, the B2 square on the 'Theirs' board meets these criteria.
 
-L1F193 is defined as a **board state feature** that activates when the B2 square is occupied by the opponent. The B2 tile, which surpasses the threshold, is referred to as a **board state property**[^1]. When this board state property is associated with the current player, it is defined as a **mine board state property**, and when associated with the opponent, it is recognized as a **their board state property**.
+The B2 tile, which surpasses the threshold, is referred to as a **board state property**[^1]. When this board state property is associated with the current player, it is defined as a **mine board state property**, and when associated with the opponent, it is recognized as a **their board state property**.
 
-[^1]: This usage of "board state property" is broader than the definition provided by Karvonen et al. (2024)[[7]](#7), who define it as a classifier of the presence of a piece at a specific board square. Here, it refers to a tile that is consistently occupied in the top 1% quantile of board states for a feature's activations, suggesting that this feature could potentially classify the presence of a piece at this specific board square, although this has not been explicitly tested.
+[^1]: This definition of "board state property" is inspired by Karvonen et al. (2024)[[7]](#7) but is used more loosely, as Karvonen et al. (2024)[[7]](#7) define it as a classifier of the presence of a piece at a specific board square. Here, it refers to a tile that is consistently occupied in the top 1% quantile of board states for a feature's activations, suggesting that this feature could potentially classify the presence of a piece at this specific board square, although this has not been explicitly tested.
 
 
 <img src="data/extracted_notable_features/layer=1/expansion_factor=8/l1_penalty=0.01/n_games=25000/threshold=0.99/L1F193_total_moves=14750_M=0_T=1_B=0.png" alt="Example Image" width="80%" height="auto">
@@ -109,26 +111,33 @@ Since it is not always guaranteed that a tile will consistently score high when 
 
 # Results
 
-In this section, I present both quantitative and qualitative results of the features identified using the previously defined threshold metric. This metric filters out games that, on average, have at least one tile consistently occupied in 95% of the board states within the top 1% quantile of board activations for an SAE feature. The quantitative results provide initial insights and a high-level understanding of the board state features obtained. In the qualitative results, I dive deeper into which layers identify specific types of board state features and explore patterns of features between and within layers. The average board states, along with the top-k boards for all six SAEs that I have found using this metric, can be found [here](https://github.com/thijmennijdam/Othello-GPT-FeatInterp/tree/main/feature-visualizations/all-features).
+In this section, I present both quantitative and qualitative results of ... identified using the previously defined threshold metric. This metric filters out SAE features that, on average, have at least one tile consistently occupied in 99% of the board states computed using the top 1% quantile of move activations for an SAE feature. The quantitative results provide initial insights and a high-level understanding of the board state features obtained. In the qualitative results, I dive deeper into which layers identify specific types of board state features and explore patterns of features between and within layers. The average board states, along with the top-10 boards for all six SAEs that I have found using this metric, can be found [here](https://github.com/thijmennijdam/Othello-GPT-FeatInterp/tree/main/plots/qualitative).
 
 ## Quantitative results
+Figure 4a
+- L3 finds most relevant features while L5 finds least relevant features for E8 variant
+- Increase in relevant features when going deeper into the network for E16 SAEs
+- It seems as though L3E8 performs better on this metric compared to the E8 SAE variants in L1 and L5 due to the small discrepancy. 
 
-Figure 4a illustrates that later layers tend to identify fewer board tile features. Although the higher number of dead features observed earlier in Layer 5 might contribute slightly to this trend, it does not fully explain the phenomenon. The difference in the number of dead features between Layer 1 and Layer 3 was not significant, yet Layer 3 shows a considerably lower number of active features compared to Layer 1.
+Figure 4b & c
+- To test which layers have more relevant features focussing on the opponents or own pieces, we look at the number of mine and their board state properties
+- When going deeper into the network, more Mine board state properties are found and less Their BSPs for E16 layers 
+<!-- Figure 4a illustrates that later layers tend to identify fewer board tile features. Although the higher number of dead features observed earlier in Layer 5 might contribute slightly to this trend, it does not fully explain the phenomenon. The difference in the number of dead features between Layer 1 and Layer 3 was not significant, yet Layer 3 shows a considerably lower number of active features compared to Layer 1.
 
 It can be observed in Figure 4b that the average number of board tiles per active feature typically decreases slightly as we go deeper into the model for the E32 SAE variants, but not for the E8 variants. While these trends are not substantial, it is interesting to note that the average number of mine/their tiles (for example, two 'mine' tiles and one 'their' tile would count as three mine/their tiles) ranges between 2 and 2.5. However, qualitatively, I observed that most features have one or two tiles, with outliers that have four or more and resemble higher-level features activated by specific board configurations. This leads to many tiles being above the threshold while most activations are zero. (I should update Figure 3b to a histogram plot to highlight this effect)
 
-Figure 4c reveals that the average game length of the features obtained is quite short, ranging only between 12 and 18 sequences. There is a clear trend for the E32 variants, where the board tiles identified on average are from moves later in the game, suggesting that later layers might be more involved in representing features that appear later in the game.
+Figure 4c reveals that the average game length of the features obtained is quite short, ranging only between 12 and 18 sequences. There is a clear trend for the E32 variants, where the board tiles identified on average are from moves later in the game, suggesting that later layers might be more involved in representing features that appear later in the game. -->
 
 <table>
   <tr>
     <td style="padding: 10px;">
-      <img src="plots/quantitative_results/feature_at_least_1_mine_theirs.png" alt="Distribution of Features with At Least One Active 'Mine' or 'Theirs' Tile" style="width: 100%; height: auto;">
+      <img src="plots/quantitative/board_state_features.png" alt="Distribution of Features with At Least One Active 'Mine' or 'Theirs' Tile" style="width: 100%; height: auto;">
     </td>
     <td style="padding: 10px;">
-      <img src="plots/quantitative_results/avg_mine_theirs_tiles_per_feature.png" alt="Average Number of 'Mine' or 'Theirs' Tiles per Feature Across Layers" style="width: 100%; height: auto;">
+      <img src="plots/quantitative/mine_board_state_properties.png" alt="Average Number of 'Mine' or 'Theirs' Tiles per Feature Across Layers" style="width: 100%; height: auto;">
     </td>
     <td style="padding: 10px;">
-      <img src="plots/quantitative_results/average_game_length.png" alt="Average Game Length of the Features Identified" style="width: 100%; height: auto;">
+      <img src="plots/quantitative/their_board_state_properties.png" alt="Average Game Length of the Features Identified" style="width: 100%; height: auto;">
     </td>
   </tr>
 </table>
@@ -138,13 +147,13 @@ Figure 4c reveals that the average game length of the features obtained is quite
 
 ## Qualitative results
 
-What do these average board state plots look like across layers? How do they differ across layers and expansion factors? I examined all the features of the SAEs that met my metric criteria. I focused on identifying any qualitative differences between the E8 and E32 variants to see if, apart from identifying more board state features, there would be a difference in what they detected. I also looked for potential differences in features found across the different layers.
+<!-- What do these average board state plots look like across layers? How do they differ across layers and expansion factors? I examined all the features of the SAEs that met my metric criteria. I focused on identifying any qualitative differences between the E8 and E32 variants to see if, apart from identifying more board state features, there would be a difference in what they detected. I also looked for potential differences in features found across the different layers. -->
 
 ### Layer 1
 
-In the Layer 1 SAEs, both the E8 and E32 variants identify clear board state features at both the middle and edges of the board. For the expansion factor of 8, examples of the average board states are shown in Figure 5, while for the expansion factor of 32, examples are shown in Figure 6. You can find the top 10 board states of these features in [this](https://github.com/thijmennijdam/Othello-GPT-FeatInterp/tree/main/feature-visualizations/all-features/layer%3D1/expansion_factor%3D8/n_games%3D30000/threshold%3D0.95) and [this](https://github.com/thijmennijdam/Othello-GPT-FeatInterp/tree/main/feature-visualizations/all-features/layer%3D1/expansion_factor%3D32/n_games%3D30000/threshold%3D0.95) folder.
+<!-- In the Layer 1 SAEs, both the E8 and E32 variants identify clear board state features at both the middle and edges of the board. For the expansion factor of 8, examples of the average board states are shown in Figure 5, while for the expansion factor of 32, examples are shown in Figure 6. You can find the top 10 board states of these features in [this](https://github.com/thijmennijdam/Othello-GPT-FeatInterp/tree/main/feature-visualizations/all-features/layer%3D1/expansion_factor%3D8/n_games%3D30000/threshold%3D0.95) and [this](https://github.com/thijmennijdam/Othello-GPT-FeatInterp/tree/main/feature-visualizations/all-features/layer%3D1/expansion_factor%3D32/n_games%3D30000/threshold%3D0.95) folder. -->
 
-<table style="width: 100%; margin: auto;">
+<!-- <table style="width: 100%; margin: auto;">
   <tr>
     <td style="text-align: center; padding: 10px;">
       <img src="plots/qualitative-results/E8/layer1/board-states/edges/L1F328_total_moves=13_M=0_T=1_B=16.png" alt="E8 Edge Feature" style="width: 100%; height: auto;">
@@ -153,11 +162,11 @@ In the Layer 1 SAEs, both the E8 and E32 variants identify clear board state fea
       <img src="plots/qualitative-results/E8/layer1/board-states/non-edges/L1F709_total_moves=17657_M=1_T=0_B=16.png" alt="E8 Non-Edge Feature" style="width: 100%; height: auto;">
     </td>
   </tr>
-</table>
+</table> -->
 
-<p style="text-align: center;">Figure 5. Average board states for the L1E8 SAE. Left: average board state of a 'Theirs' edge tile. Right: a 'Mine' board state feature. </p>
+<!-- <p style="text-align: center;">Figure 5. Average board states for the L1E8 SAE. Left: average board state of a 'Theirs' edge tile. Right: a 'Mine' board state feature. </p> -->
 
-<table style="width: 100%; margin: auto;">
+<!-- <table style="width: 100%; margin: auto;">
   <tr>
     <td style="text-align: center; padding: 10px;">
       <img src="plots/qualitative-results/E32/layer1/board-states/edges/average-board-states/L1F1020_total_moves=93_M=0_T=1_B=8.png" alt="E32 Edge Feature" style="width: 100%; height: auto;">
@@ -166,15 +175,15 @@ In the Layer 1 SAEs, both the E8 and E32 variants identify clear board state fea
       <img src="plots/qualitative-results/E32/layer1/board-states/non-edges/average-board-states/L1F1230_total_moves=527_M=0_T=1_B=15.png" alt="E32 Non-Edge Feature" style="width: 100%; height: auto;">
     </td>
   </tr>
-</table>
+</table> -->
 
 
-<p style="text-align: center;">Figure 6.  Average board states for the L1E32 SAE. Left: average board state of a 'Theirs' edge tile. Right: a 'Mine' board state feature.</p>
+<!-- <p style="text-align: center;">Figure 6.  Average board states for the L1E32 SAE. Left: average board state of a 'Theirs' edge tile. Right: a 'Mine' board state feature.</p>
 
-Among the board state features in Layer 1, I found some that seem to be 'this tile is being played by mine/theirs' features, instead of 'this tile is occupied by mine/theirs'. Figure 7 shows an example of the average board state, along with the top 5 activations of the board states of these moves, illustrating that the tile the feature activates for is the current move being played. The full top 10 boards can be viewed [here](https://github.com/thijmennijdam/Othello-GPT-FeatInterp/tree/main/feature-visualizations/all-features/layer%3D1/expansion_factor%3D32/n_games%3D30000/threshold%3D0.95/L1F3582_total_moves%3D421_M%3D0_T%3D1_B%3D9).
+Among the board state features in Layer 1, I found some that seem to be 'this tile is being played by mine/theirs' features, instead of 'this tile is occupied by mine/theirs'. Figure 7 shows an example of the average board state, along with the top 5 activations of the board states of these moves, illustrating that the tile the feature activates for is the current move being played. The full top 10 boards can be viewed [here](https://github.com/thijmennijdam/Othello-GPT-FeatInterp/tree/main/feature-visualizations/all-features/layer%3D1/expansion_factor%3D32/n_games%3D30000/threshold%3D0.95/L1F3582_total_moves%3D421_M%3D0_T%3D1_B%3D9). -->
 
 
-<table style="width: 100%; margin: auto;">
+<!-- <table style="width: 100%; margin: auto;">
   <tr>
     <td style="text-align: center; padding: 5px;">
       <img src="plots/qualitative-results/E32/layer1/this-moved-played/average-board-states/L1F3582_total_moves=421_M=0_T=1_B=9.png" alt="E32 Edge Feature" style="width: 100%; height: auto;">
@@ -197,13 +206,13 @@ Among the board state features in Layer 1, I found some that seem to be 'this ti
       <img src="plots/qualitative-results/E32/layer1/this-moved-played/topk/L1F3582_total_moves=421_M=0_T=1_B=9/k=4.png" alt="E32 Non-Edge Feature" style="width: 100%; height: auto;">
     </td>
   </tr>
-</table>
+</table> -->
 
-<p style="text-align: center;">Figure 7. Top row: Average board state for L1E32 feature 3582 (left), and the top 1 and 2 board states that activated this feature the most (middle and right). Bottom row: The top 3, 4, and 5 board states that activated this feature the most.</p>
+<!-- <p style="text-align: center;">Figure 7. Top row: Average board state for L1E32 feature 3582 (left), and the top 1 and 2 board states that activated this feature the most (middle and right). Bottom row: The top 3, 4, and 5 board states that activated this feature the most.</p>
 
-Beyond 'this tile is occupied by mine/theirs' and 'this tile is being played by mine/theirs' features, both the E8 and E32 variants discover several high-level features that activate heavily on particular game starts, with multiple (around five or more) tiles exceeding the threshold. This pattern is observed across all layers, with one specific game start frequently appearing. The average board states of some of these features are shown in Figure 8. More examples for layer 1 can be found [here](https://github.com/thijmennijdam/Othello-GPT-FeatInterp/tree/main/feature-visualizations/all-features/layer%3D1).
+Beyond 'this tile is occupied by mine/theirs' and 'this tile is being played by mine/theirs' features, both the E8 and E32 variants discover several high-level features that activate heavily on particular game starts, with multiple (around five or more) tiles exceeding the threshold. This pattern is observed across all layers, with one specific game start frequently appearing. The average board states of some of these features are shown in Figure 8. More examples for layer 1 can be found [here](https://github.com/thijmennijdam/Othello-GPT-FeatInterp/tree/main/feature-visualizations/all-features/layer%3D1). -->
 
-<table style="width: 100%; margin: auto;">
+<!-- <table style="width: 100%; margin: auto;">
   <tr>
     <td style="text-align: center; padding: 5px;">
       <img src="plots/qualitative-results/E8/layer1/high-level/L1F583_total_moves=17624_M=0_T=2_B=44.png" alt="High-Level Feature 3" style="width: 100%; height: auto;">
@@ -215,15 +224,13 @@ Beyond 'this tile is occupied by mine/theirs' and 'this tile is being played by 
       <img src="plots/qualitative-results/E32/layer1/high-level/L1F3225_total_moves=17700_M=0_T=2_B=51.png" alt="High-Level Feature 2" style="width: 100%; height: auto;">
     </td>
   </tr>
+</table> -->
 
+<!-- <p style="text-align: center;">Figure 8. Examples of high-level features for the same game discovered by E8 and E32 variants in Layer 1. Left: An E8 feature. Middle and right: E32 features. </p>
 
-</table>
+Lastly, I observed features that detected various patterns. They were found both in L1E8 and L1E32. Several examples are shown in Figure 9.  -->
 
-<p style="text-align: center;">Figure 8. Examples of high-level features for the same game discovered by E8 and E32 variants in Layer 1. Left: An E8 feature. Middle and right: E32 features. </p>
-
-Lastly, I observed features that detected various patterns. They were found both in L1E8 and L1E32. Several examples are shown in Figure 9. 
-
-<table style="width: 100%; margin: auto;">
+<!-- <table style="width: 100%; margin: auto;">
   <tr>
     <td style="text-align: center; padding: 10px;">
       <img src="plots\qualitative-results\E32\layer1\patterns\average-board-states\L1F260_total_moves=1328_M=0_T=2_B=44.png" alt="E8 Edge Feature" style="width: 100%; height: auto;">
@@ -247,17 +254,17 @@ Lastly, I observed features that detected various patterns. They were found both
       <img src="plots\qualitative-results\E32\layer1\patterns\topk\L1F491_total_moves=133_M=2_T=3_B=41\k=1.png" alt="E8 Non-Edge Feature" style="width: 100%; height: auto;">
     </td>
   </tr>
-</table>
+</table> -->
 
-<p style="text-align: center;">Figure 9. Examples of features that find patterns. First column: The average board states. Second and last column: the top 2 board states that activated this feature the most. </p>
+<!-- <p style="text-align: center;">Figure 9. Examples of features that find patterns. First column: The average board states. Second and last column: the top 2 board states that activated this feature the most. </p>
 
 All of the above features are found in both the E8 and E32 variants. Other than observing more features in E32, which was clear from the quantitative analysis, I observed no clear qualitative differences between the features of E8 and E32.
 
-### Layers 3 and 5
+<!-- ### Layers 3 and 5 -->
 
-Now turning our attention to the SAEs in layers 3 and 5, I observed that almost all features of the L3E8 and L5E8 variants are high-level features similar to those observed in Layer 1, as shown in Figure 8. Compared to Layer 1 E8 and all the E32 variants, these SAEs mostly fail to extract board state features from the residual stream, other than a few low-quality ones either very early in the game or with only a few samples barely averaging over more than 10 games. These are shown in Figure 10.
+<!-- Now turning our attention to the SAEs in layers 3 and 5, I observed that almost all features of the L3E8 and L5E8 variants are high-level features similar to those observed in Layer 1, as shown in Figure 8. Compared to Layer 1 E8 and all the E32 variants, these SAEs mostly fail to extract board state features from the residual stream, other than a few low-quality ones either very early in the game or with only a few samples barely averaging over more than 10 games. These are shown in Figure 10. -->
 
-<table style="width: 100%; margin: auto;">
+<!-- <table style="width: 100%; margin: auto;">
   <tr>
     <td style="text-align: center; padding: 10px;">
       <img src="plots/qualitative-results/E8/layer3/board-states/non-edges/L3F1002_total_moves=13_M=0_T=1_B=24.png" alt="E8 Edge Feature" style="width: 100%; height: auto;">
@@ -269,13 +276,13 @@ Now turning our attention to the SAEs in layers 3 and 5, I observed that almost 
       <img src="plots/qualitative-results/E8/layer3/board-states/non-edges/L3F654_total_moves=15080_M=1_T=0_B=43.png" alt="E8 Non-Edge Feature" style="width: 100%; height: auto;">
     </td>
   </tr>
-</table>
+</table> -->
 
-<p style="text-align: center;">Figure 10. Examples of board state plots extracted from the E8 variants in layers 3 and 5. Apart from the rightmost plot, the few that are found are generally of lower quality.</p>
+<!-- <p style="text-align: center;">Figure 10. Examples of board state plots extracted from the E8 variants in layers 3 and 5. Apart from the rightmost plot, the few that are found are generally of lower quality.</p>
 
-The E32 variant of the layer 3 and layer 5 SAEs have a few better quality features, shown in Figure 11. Generally, although fewer features are found in these layers and they are of slightly lower quality, the average board states look qualitatively similar to those observed in Layer 1. The only clear difference I observed is that they do not find nearly the same number of edge tile features and patterns that Layer 1 could find, as I only found one edge feature in the L3E32 and L5E32 SAEs (none in the E8 variants). Lastly, I did find some patterns in the features of L3E32, shown in Figure 12, while I could not find any in Layer 5. Apart from this difference, the average board state plots resemble those found in Layer 1, and I did not find many differences between the features across these different layers.
+The E32 variant of the layer 3 and layer 5 SAEs have a few better quality features, shown in Figure 11. Generally, although fewer features are found in these layers and they are of slightly lower quality, the average board states look qualitatively similar to those observed in Layer 1. The only clear difference I observed is that they do not find nearly the same number of edge tile features and patterns that Layer 1 could find, as I only found one edge feature in the L3E32 and L5E32 SAEs (none in the E8 variants). Lastly, I did find some patterns in the features of L3E32, shown in Figure 12, while I could not find any in Layer 5. Apart from this difference, the average board state plots resemble those found in Layer 1, and I did not find many differences between the features across these different layers. -->
 
-<table style="width: 100%; margin: auto;">
+<!-- <table style="width: 100%; margin: auto;">
   <tr>
     <td style="text-align: center; padding: 10px;">
       <img src="plots/qualitative-results/E32/layer3/board-states/non-edges/L3F147_total_moves=298_M=1_T=1_B=33.png" alt="E32 Non-Edge Feature" style="width: 100%; height: auto;">
@@ -284,10 +291,10 @@ The E32 variant of the layer 3 and layer 5 SAEs have a few better quality featur
       <img src="plots/qualitative-results/E32/layer5/board-states/non-edges/L5F3620_total_moves=810_M=0_T=1_B=4.png" alt="E32 Non-Edge Feature" style="width: 100%; height: auto;">
     </td>
   </tr>
-</table>
+</table> -->
 
-<p style="text-align: center;">Figure 11. Examples of board state plots extracted from the E32 variants in layers 3 and 5. These features are of slightly better quality than those in the E8 variants.</p>
-
+<!-- <p style="text-align: center;">Figure 11. Examples of board state plots extracted from the E32 variants in layers 3 and 5. These features are of slightly better quality than those in the E8 variants.</p> -->
+<!-- 
 <table style="width: 100%; margin: auto;">
   <tr>
     <td style="text-align: center; padding: 10px;">
@@ -311,9 +318,9 @@ The E32 variant of the layer 3 and layer 5 SAEs have a few better quality featur
       <img src="plots/qualitative-results/E32/layer3/board-states/patterns/topk/L3F3676_total_moves=3709_M=0_T=3_B=43/k=1.png" alt="E32 Pattern Feature" style="width: 100%; height: auto;">
     </td>
   </tr>
-</table>
+</table> -->
 
-<p style="text-align: center;">Figure 12. Examples of pattern features discovered in L3E32. Top row: Average board state and the top 2 board states for feature 1612. Bottom row: Average board state and the top 2 board states for feature 3676.</p>
+<!-- <p style="text-align: center;">Figure 12. Examples of pattern features discovered in L3E32. Top row: Average board state and the top 2 board states for feature 1612. Bottom row: Average board state and the top 2 board states for feature 3676.</p> -->
 
 # Discussion
 
