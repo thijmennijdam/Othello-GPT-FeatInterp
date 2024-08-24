@@ -443,19 +443,6 @@ Lastly, the open-source codebase provided by this work offers a valuable tool fo
 
 By making the code and results fully publicly available, this study aims to lay a foundation for further research in this area. For any questions or further discussion, please feel free to reach out.
 
-<!-- 
-# Conclusion
-The exploration of SAEs across different layers and expansion factors has yielded several key insights. As the depth of the network increases, there is a notable shift in focus from features related to the opponent to those associated with the current player. Additionally, the replication of several features identified in earlier studies, such as those detecting the "current move" and the occupancy of specific tiles by either the current player or the opponent, was successful. A new type of feature was also discovered, primarily in layer 3, which activates when a move is made, and an adjacent tile becomes legal. Furthermore, certain features were found consistently across multiple layers, and some appeared to be duplicates, often activating strongly in games that resulted in similar average board states.
-
-# Discussion 
-Despite these findings, several limitations to the current approach are acknowledged. The algorithm used for extracting notable board state features focuses narrowly on the presence of a board state property to identify significant moves, excluding other criteria that could be important. For instance, the algorithm does not account for features that consistently flip specific tiles or consider the board state properties of blank features, which were not included in the current analysis. Previous research [[1]](#1) has suggested that later layers can contain features that activate when certain blank squares become legal, indicating that the current method might overlook some aspects of the model's behavior.
-
-Additionally, the analysis was limited to examining the top-10 boards for each notable feature, without extending the investigation to a larger set, such as the top 1000 board states. This limitation renders some observations inconclusive and highlights the need for further research.
-
-Future work could involve developing metrics to quantify the features identified qualitatively in this study. For example, calculating the mean squared error (MSE) between average board states could help identify similar features, or thresholds could be established for "current move" features based on how frequently the last move matches the identified board state property. Similar metrics could also be developed for other types of features. Moreover, the open-source codebase provided by this study offers a valuable tool for exploring the architectural influences of both Othello-GPT and SAEs. For instance, future research could investigate how the size of the residual stream affects the number of features extracted by SAEs with comparable expansion factors.
-
-By making the code available, this study aims to provide an accessible foundation for further research in this area. For any questions or further discussion, readers are encouraged to reach out. -->
-
 # Acknowledgements
 I would like to express my sincere gratitude to my supervisor, Leonard Bereska, for his invaluable guidance and support throughout this project. His insights have been instrumental in shaping the direction of this work. I also wish to extend my thanks to Robert Huben for his very thorough and helpful feedback on earlier drafts of this post.
 
