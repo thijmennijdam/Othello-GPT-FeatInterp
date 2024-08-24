@@ -1,4 +1,4 @@
-# An Analysis of Sparse Autoencoder Features within Othello-GPT
+# A Qualitative Analysis of Sparse Autoencoder Features within Othello-GPT
 
 Recently, training sparse autoencoders (SAEs) to extract interpretable features from language models has gained significant attention in the field of mechanistic interpretability. Training SAEs on model activations aims to address the problem of superposition, where multiple features learned by the model overlap within a single dimension of the internal representation. This phenomenon, known as polysemanticity, complicates the interpretation of model activations. By training SAEs to decompose activations into a sparser representation, insights into model representations can be more easily obtained. However, both training SAEs and interpreting the sparsified model activations remain challenging, as it is unclear a priori which features the model is learning [[1]](#1).
 
@@ -460,26 +460,3 @@ I would like to express my sincere gratitude to my supervisor, Leonard Bereska, 
 <a id="6">[6]</a> Chiu, J., Hazineh, D., & Zhang, Z. (2023). Probing Emergent world representations in Transformer Networks: Sequential models trained to play Othello. Probing Emergent World Representations in Transformer Networks: Sequential Models Trained to Play Othello. https://deanhazineh.github.io/miniprojects/MI_Othello/paper.pdf
 
 <a id="7">[7]</a> Karvonen, A., Wright, B., Rager, C., Angell, R., Brinkmann, J., Smith, L. R., Verdun, C. M., Bau, D., & Marks, S. (n.d.). Measuring Progress in Dictionary Learning for Language Model Interpretability with Board Game Models. OpenReview. https://openreview.net/forum?id=qzsDKwGJyB
-
-
-# Appendix
-<table style="width: 80%; margin: auto;">
-  <tr>
-    <td style="text-align: center; padding: 10px;">
-      <img src="plots\qualitative\layer=1\expansion_factor=16\l1_penalty=0.01\n_games=25000\threshold=0.99\L1F328_total_moves=14750_M=0_T=1_B=3.png" style="width: 100%; height: auto;">
-    </td>
-    <td style="text-align: center; padding: 10px;">
-      <img src="plots\qualitative\layer=1\expansion_factor=16\l1_penalty=0.01\n_games=25000\threshold=0.99\L1F272_total_moves=14750_M=0_T=1_B=3.png" style="width: 100%; height: auto;">
-    </td>
-  </tr>
-</table>
-<table style="width: 80%; margin: auto;">
-  <tr>
-    <td style="text-align: center; padding: 10px;">
-      <img src="plots\qualitative\layer=1\expansion_factor=16\l1_penalty=0.01\n_games=25000\threshold=0.99\L1F129_total_moves=14750_M=0_T=1_B=12.png" style="width: 100%; height: auto;">
-    </td>
-    <td style="text-align: center; padding: 10px;">
-      <img src="plots\qualitative\layer=1\expansion_factor=16\l1_penalty=0.01\n_games=25000\threshold=0.99\L1F113_total_moves=14750_M=0_T=1_B=11.png" style="width: 100%; height: auto;">
-    </td>
-  </tr>
-</table>
