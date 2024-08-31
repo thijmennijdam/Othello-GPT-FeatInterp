@@ -452,23 +452,6 @@ Several limitations of the current approach must be acknowledged:
 
 By making the code and results fully publicly available, this study aims to lay a foundation for further research in this area. For any questions or further discussion, please feel free to reach out.
 
-
-# Discussion
-
-The exploration of SAEs across different layers and expansion factors has provided valuable insights into the model's features. Quantitatively, it was observed that as the depth of the network increases, there is a clear shift from features related to recognizing the opponent's tiles to a balance between features focusing on both the opponent and the current player. In the qualitative analysis, this shift in focus was evident as layer 1 features primarily comprised "current move" detectors—features that simply identify the move played by the opponent—while layer 3 introduced simple board state features, and layer 5 revealed more complex features. A novel type of feature was also discovered, primarily in layer 3, which activates when an opponent's move makes an adjacent tile legal. Additionally, intriguing features, such as specific game state detectors and duplicate features, were identified, warranting further investigation.
-
-Several limitations of the current approach must be acknowledged.
-
-- The developed algorithm for extracting notable board state features focuses primarily on the presence of a BSP related to either "mine" or "their" pieces, potentially overlooking important criteria. For instance, it does not account for features that consistently activate when flipping specific tiles or those that activate on BSPs that are blank under certain conditions. Previous research [[1]](#1) suggests that later layers can contain features that activate when certain blank squares become legal, an aspect not explored in this study.
-
-- The qualitative analysis was limited to examining the top-10 boards for each notable feature, without extending the investigation to a larger set, such as the top 1000 board states. This limitation renders the qualitative analysis an initial investigation that highlights several interesting features, but the findings should not be considered conclusive. To draw more definitive conclusions about these features, quantitative methods are needed to analyze the average board states and larger sets of top-k boards associated with these states. For example, a metric could be developed to count how many of the top 1000 boards for a feature involve the current move, whereas in this study, only the top 10 boards were examined. Developing quantitative metrics to support the claims made in this work is an interesting direction for future research. Another example could involve calculating the MSE between average board states to identify similar features.
-
-- Duplicate features are not analyzed in depth in this work, and therefore it is unclear how many of the extracted features are fully unique. In future work the cosine similarities between features can be analyzed. This would give more valuable insights in the siilarity and uniqness of the features, and could potentially explain why different features give near identical average board state plots. 
-
-- Unlcear how these results generalize to architecturcal changes in Othello-GPT. Future work could explore the architectural influences of both Othello-GPT and SAEs. For instance, it can be investigated how the size of the residual stream affects the number and complexity of features extracted by SAEs with comparable expansion factors.
-
-By making the code and results fully publicly available, this study aims to lay a foundation for further research in this area. For any questions or further discussion, please feel free to reach out.
-
 # Acknowledgements
 I would like to express my sincere gratitude to my supervisor, Leonard Bereska, for his invaluable guidance and support throughout this project. His insights have been instrumental in shaping the direction of this work. I also wish to extend my thanks to Robert Huben for his very thorough and helpful feedback on earlier drafts of this post. 
 
