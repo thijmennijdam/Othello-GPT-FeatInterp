@@ -1,4 +1,15 @@
-# A Qualitative Analysis of Sparse Autoencoder Features within Othello-GPT
+# Discovering Board State Features in Othello-GPT: A Qualitative Analysis of Sparse Autoencoders
+
+<div style="text-align: center;">
+
+**Abstract**
+
+This study explores the use of Sparse Autoencoders (SAEs) within an Othello-GPT model. We develop a metric for feature extraction and perform an in-depth quantitative and qualitative analysis of the features learned by SAEs across various network layers and expansion factors. Our results demonstrate a progression in feature complexity, starting with basic "current move" detectors in the early layers and evolving into more complex board state features in the later layers. We also identify novel features that activate based on the legality of adjacent tiles. Moreover, this work aims to supports future research by open-sourcing the codebase, enabling the training of Othello-GPTs and SAEs, caching SAE activations, and the analysis of these activations.
+</div>
+
+<br>
+<br>
+
 
 Recently, training sparse autoencoders (SAEs) to extract interpretable features from language models has gained significant attention in the field of mechanistic interpretability. Training SAEs on model activations aims to address the problem of superposition, where multiple features learned by the model overlap within a single dimension of the internal representation. This phenomenon, known as polysemanticity, complicates the interpretation of model activations. By training SAEs to decompose activations into a sparser representation, insights into model representations can be more easily obtained. However, both training SAEs and interpreting the sparsified model activations remain challenging, as it is unclear a priori which features the model is learning [[1]](#1).
 
@@ -34,7 +45,7 @@ To visualize features, access to an Othello-GPT model and its corresponding SAEs
 
 The [TransformerLens](https://github.com/TransformerLensOrg/TransformerLens) library is used to train the Othello-GPT model, while the SAEs were trained using [SAELens](https://github.com/jbloomAus/SAELens). SAELens provides a complete training pipeline compatible with models from the TransformerLens library. A notable challenge is the incompatibility of SAELens with locally trained models from TransformerLens, as it only supports official TransformerLens models available on HuggingFace. To enable the use of custom models, several modifications were made to the respective libraries, as documented in this [file](https://github.com/thijmennijdam/Othello-GPT-FeatInterp/blob/main/changes.md). To cache SAE activations efficiently after training, code from the [sae_vis](https://github.com/callummcdougall/sae_vis) library has been adopted.
 
-The dataset used for this research, comprising 23.5 million synthetic Othello games, is publicly [available](https://huggingface.co/datasets/taufeeque/othellogpt) on HuggingFace.
+The dataset used for this research, comprising 23.5 million synthetic Othello games, is publicly [available](https://huggingface.co/datasets/taufeeque/othellogpt) on HuggingFace. It is important to note that in some games, when no legal move is possible, the sequence is padded.
 
 ## Othello-GPT
 To achieve a balance between realistic architecture and research efficiency, a model configuration is selected with a residual stream dimension of 128 and 6 layers, mirroring the setup used by He et al. (2024) [[1]](#1). The model is trained on 1 million games (59 million tokens/moves) over 5 epochs, achieving a top-1 accuracy of 98.15% in predicting legal moves. Although an accuracy of 99.9% should be attainable with this architectural configuration, as suggested by Hazineh et al. [[3]](#3), achieving such a result would likely require training the model on many more samples (e.g., 10 to 20 times longer) or conducting a grid search on various hyperparameters. Given the constraints on computational resources and time, further optimization was not deemed worthwhile.
@@ -444,7 +455,7 @@ Lastly, the open-source codebase provided by this work offers a valuable tool fo
 By making the code and results fully publicly available, this study aims to lay a foundation for further research in this area. For any questions or further discussion, please feel free to reach out.
 
 # Acknowledgements
-I would like to express my sincere gratitude to my supervisor, Leonard Bereska, for his invaluable guidance and support throughout this project. His insights have been instrumental in shaping the direction of this work. I also wish to extend my thanks to Robert Huben for his very thorough and helpful feedback on earlier drafts of this post.
+I would like to express my sincere gratitude to my supervisor, Leonard Bereska, for his invaluable guidance and support throughout this project. His insights have been instrumental in shaping the direction of this work. I also wish to extend my thanks to Robert Huben for his very thorough and helpful feedback on earlier drafts of this post. 
 
 # References
 <a id="1">[1]</a> He, Z., Ge, X., Tang, Q., Sun, T., Cheng, Q., & Qiu, X. (2024). Dictionary learning Improves Patch-Free circuit Discovery in Mechanistic Interpretability: A case study on Othello-GPT. arXiv.org. https://arxiv.org/abs/2402.12201
