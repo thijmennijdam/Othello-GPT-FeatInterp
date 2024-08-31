@@ -2,12 +2,10 @@
 
 <p align="center">
 
-**Abstract**
-
-This study explores the use of Sparse Autoencoders (SAEs) within an Othello-GPT model. We develop a metric for feature extraction and perform an in-depth quantitative and qualitative analysis of the features learned by SAEs across various network layers and expansion factors. Our results demonstrate a progression in feature complexity, starting with basic "current move" detectors in the early layers and evolving into more complex board state features in the later layers. We also identify novel features that activate based on the legality of adjacent tiles. Moreover, this work aims to supports future research by open-sourcing the codebase, enabling the training of Othello-GPTs and SAEs, caching SAE activations, and the analysis of these activations.
+**Abstract**: This study explores the use of Sparse Autoencoders (SAEs) within an Othello-GPT model. We develop a metric for feature extraction and perform an in-depth quantitative and qualitative analysis of the features learned by SAEs across various network layers and expansion factors. Our results demonstrate a progression in feature complexity, starting with basic "current move" detectors in the early layers and evolving into more complex board state features in the later layers. We also identify novel features that activate based on the legality of adjacent tiles. Moreover, this work aims to supports future research by open-sourcing the codebase, enabling the training of Othello-GPTs and SAEs, caching SAE activations, and the analysis of these activations.
 </p>
 
-<br><br>
+<br>
 
 Recently, training sparse autoencoders (SAEs) to extract interpretable features from language models has gained significant attention in the field of mechanistic interpretability. Training SAEs on model activations aims to address the problem of superposition, where multiple features learned by the model overlap within a single dimension of the internal representation. This phenomenon, known as polysemanticity, complicates the interpretation of model activations. By training SAEs to decompose activations into a sparser representation, insights into model representations can be more easily obtained. However, both training SAEs and interpreting the sparsified model activations remain challenging, as it is unclear a priori which features the model is learning [[1]](#1).
 
